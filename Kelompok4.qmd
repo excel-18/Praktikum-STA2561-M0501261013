@@ -1,0 +1,519 @@
+---
+title: "Tugas Kel 4 Pemrograman Statistika"
+author: 
+  - "Uswatun Hasanah-M0501261021"
+  - "Excel Muhammad Hendri-M0501261013"
+  - "Nurcahyono Indarto-M0501261083"
+format: 
+  html:
+    embed-resources: true
+toc: true
+toc-location: right
+editor: visual
+---
+
+# KELOMPOK 4
+
+# Soal 1 Pembersihan Data Mahasiswa
+
+1.1 Buat data frame bernama nilai_raw secara manual di R berdasarkan Tabel 1.
+
+```{r}
+nilai_raw <- data.frame(Nama = c("Andi", "Budi", "Citra", "Dewi", "Andi"),
+                        Matematika = c(80, 90, NA, 75, 80),
+                        Statistika = c(85, 88, 78,"-", 85),
+                        Umur = c(21, 20, 22, 21, 21),
+                        stringsAsFactors = FALSE)
+nilai_raw
+```
+
+2.  Identifikasi nilai yang hilang pada dataset secara sistematis. Ubah tanda hubung (`"-"`) pada nilai Statistika milik Dewi menjadi nilai hilang standar R, yaitu `NA`.
+
+    ```{r}
+    nilai_raw$Statistika[nilai_raw$Statistika == "-"] <- NA
+    nilai_raw$Statistika <- as.numeric(nilai_raw$Statistika)
+    nilai_raw
+    ```
+
+<!-- -->
+
+3.  Lakukan imputasi terhadap nilai `Statistika` yang kosong menggunakan rata-rata nilai Statistika mahasiswa lainnya yang tersedia.
+
+```{r}
+mean_statistika <- mean(nilai_raw$Statistika, na.rm = TRUE)
+nilai_raw$Statistika[is.na(nilai_raw$Statistika)] <- mean_statistika
+nilai_raw
+```
+
+```{r}
+mean_matematika <- mean(nilai_raw$Matematika, na.rm = TRUE)
+nilai_raw$Matematika[is.na(nilai_raw$Matematika)] <- mean_matematika
+nilai_raw
+```
+
+4.  Buat kolom baru bernama `Status_Umur` menggunakan fungsi `ifelse()` dengan ketentuan:\
+    `Dewasa` jika umur ≥ 21 tahun;\
+    `Muda` jika umur \< 21 tahun.
+
+    ```{r}
+    nilai_raw$Status_Umur <- ifelse(
+      nilai_raw$Umur >= 21,
+      "Dewasa",
+      "Muda"
+    )
+    nilai_raw
+    ```
+
+5.  Identifikasi dan hapus baris pengamatan yang duplikat.
+
+    ```{r}
+    nilai_raw[duplicated(nilai_raw), ]
+    ```
+
+```{r}
+nilai_clean <- nilai_raw[!duplicated(nilai_raw), ]
+nilai_clean
+```
+
+6.  Simpan dataset yang telah dibersihkan ke dalam file bernama **`nilai_bersih.csv`**
+
+    ```{r}
+    write.csv(nilai_clean, "nilai_bersih.csv", row.names = FALSE)
+    getwd()
+    ```
+
+# Soal 2 Subsetting dan Pengurutan Multikriteria
+
+1.  Buat data frame bernama `profil` secara manual di R berdasarkan Tabel 2.
+
+    ```{r}
+    profil <- data.frame(
+      No = 1:10,
+      gender = c("f", "f", "f", "m", "m", "f", "m", "m", "f", "m"),
+      v1 = c(8, 15, 8, 14, 8, 10, 9, 9, 10, 12),
+      v2 = c(9, 8, 13, 9, 2, 6, 9, 10, 13, 10),
+      v3 = c(5, 9, 12, 8, 9, 10, 7, 8, 6, 9),
+      v4 = c(9, 5, 6, NA, 16, 9, 13, 10, 7, 8),
+      v5 = c(9, 10, 7, 11, 8, 10, 9, 5, 10, 17),
+      v6 = c(9, 8, 9, 10, 10, 10, 12, 10, 12, 7),
+      v7 = c(5, 10, 14, 6, 8, 9, 10, 6, 13, 9),
+      v8 = c(9, 12, 12, 11, 9, 7, 9, 12, 9, 10),
+      v9 = c(11, 9, 12, 11, 8, 7, 11, 6, 6, 7),
+      v10 = c(8, 15, 9, 8, 9, 11, 7, 8, 9, 7)
+    )
+
+    profil
+    ```
+
+2.  Lakukan penyaringan (subsetting) sehingga hanya menyisakan pengamatan yang memenuhi salah satu kondisi berikut:\
+    gender laki-laki `(m)` dan `v1 > 9` ; atau\
+    gender perempuan `(f)` dan `v3 <= 10`.
+
+```{r}
+profil_baru <- subset(
+  profil,
+  (gender == "m" & v1 > 9) |
+    (gender == "f" & v3 <= 10)
+)
+
+profil_baru
+```
+
+3.  Urutkan data hasil penyaringan secara multikriteria, dengan ketentuan:\
+    `gender` diurutkan secara *descending*;\
+    untuk pengamatan dengan `gender` yang sama, `v5` diurutkan secara *ascending*.
+
+    Untuk mengurutkan **data hasil penyaringan** dengan dua kriteria:
+
+    1.  `gender` secara **descending** (`m` → `f`)
+
+    2.  Jika `gender` sama, `v5` secara **ascending**
+
+    ```{r}
+    profil_urut <- profil[
+      order(-as.numeric(factor(profil$gender, levels = c("m", "f"))),
+            profil$v5),
+    ]
+
+    profil_urut
+    ```
+
+4.  Simpan hasil akhir ke dalam file bernama **`profil_filter.csv`**.
+
+```{r}
+write.csv(
+  profil_urut,
+  "profil_filter.csv",
+  row.names = FALSE
+)
+getwd()
+```
+
+# Soal 3 Penggabungan dan Reshapping
+
+Diberikan dua data frame mengenai skor penjualan mingguan beberapa toko berikut.
+
+info penjualan
+
+```{r}
+df_sales <- data.frame(
+  id_toko = c("T1", "T2", "T3"),
+  Minggu1 = c(120, 150, 95),
+  Minggu2 = c(135, 140, 110)
+)
+
+df_sales
+```
+
+Info Kota
+
+```{r}
+df_info <- data.frame(
+  id = c("T1", "T2", "T4"),
+  Kota = c("Jakarta", "Bandung", "Surabaya")
+)
+df_info
+
+```
+
+1.  Gabungkan `df_sales` dan `df_info` menggunakan fungsi `merge()` dengan metode Full Outer Join, sehingga seluruh toko dari kedua data frame tetap disertakan.\
+    Perhatikan bahwa nama variabel kunci pada kedua data frame berbeda, yaitu `id_toko` pada `df_sales` dan `id` pada `df_info`. Gunakan argumen penggabungan yang sesuai.
+
+```{r}
+df_gabungan <- merge(
+  df_sales,
+  df_info,
+  by.x = "id_toko",
+  by.y = "id",
+  all = TRUE
+)
+
+df_gabungan
+```
+
+2.  Ubah struktur data hasil penggabungan dari format Wide menjadi Long, sehingga:\
+    `Minggu1` dan `Minggu2` digabung menjadi satu kolom bernama `Waktu`;\
+    nilai penjualan disimpan dalam satu kolom bernama `Penjualan`.
+
+```{r}
+library(tidyr)
+
+df_long <- df_gabungan %>%
+  pivot_longer(
+    cols = c(Minggu1, Minggu2),
+    names_to = "Waktu",
+    values_to = "Penjualan"
+  )
+
+df_long
+```
+
+3.  Simpan dataset dalam format Long tersebut ke dalam file bernama **`penjualan_long.csv`**.
+
+```{r}
+write.csv(
+  df_long,
+  "penjualan_long.csv",
+  row.names = FALSE
+)
+getwd()
+```
+
+# Soal 4 Eksplorasi Visual
+
+Gunakan dataset bawaan R `CO2` untuk mengeksplorasi hubungan antara konsentrasi karbon dioksida (`conc`) dan tingkat penyerapan karbon dioksida (`uptake`) pada tanaman.
+
+```{r}
+data(CO2)
+head(CO2)
+```
+
+```{r}
+str(CO2)
+```
+
+```{r}
+summary(CO2)
+```
+
+1.  Kenali struktur dataset `CO2` dan identifikasi peran peubah `Plant`, `Type`, `Treatment`, `conc`, dan `uptake`, kemudian buat grafik menggunakan **base R** untuk menunjukkan hubungan `conc` dan `uptake` dengan mengatur bentuk dan ukuran titik, warna, judul, label sumbu, serta rentang sumbu, lalu tambahkan minimal **dua elemen grafik** menggunakan `points()`, `lines()`, `abline()`, atau `text()`.
+
+<!-- -->
+
+1.  hubungan `conc` dan `uptake`
+
+    ```{r}
+    plot(CO2$conc, CO2$uptake,
+         main = "Hubungan Konsentrasi CO2 dan Uptake",
+         xlab = "Konsentrasi CO2",
+         ylab = "Tingkat Penyerapan CO2",
+         pch = 19)
+    model <- lm(uptake ~ conc, data = CO2)
+
+    abline(model, lwd = 2)
+    ```
+
+```{r}
+class(CO2$Plant)
+class(CO2$Type)
+class(CO2$Treatment)
+class(CO2$conc)
+class(CO2$uptake)
+```
+
+```{r}
+plot(CO2$conc, CO2$uptake,
+     pch = 19,                 # bentuk titik
+     cex = 1.2,                # ukuran titik
+     col = "Green",        # warna titik
+     main = "Hubungan Konsentrasi CO2 dan Penyerapan CO2",
+     xlab = "Konsentrasi CO2 (conc)",
+     ylab = "Tingkat Penyerapan CO2 (uptake)",
+     xlim = c(0, 1000),         # rentang sumbu X
+     ylim = c(0, 50))           # rentang sumbu Y
+```
+
+```{r}
+# Membuat model regresi
+model <- lm(uptake ~ conc, data = CO2)
+
+# Membuat scatter plot
+plot(CO2$conc, CO2$uptake,
+     pch = 19,
+     cex = 1.2,
+     col = "steelblue",
+     main = "Hubungan Konsentrasi CO2 dan Penyerapan CO2",
+     xlab = "Konsentrasi CO2 (conc)",
+     ylab = "Tingkat Penyerapan CO2 (uptake)",
+     xlim = c(0, 1000),
+     ylim = c(0, 50))
+
+# Elemen grafik 1: garis regresi
+abline(model,
+       col = "red",
+       lwd = 2)
+
+# Elemen grafik 2: garis rata-rata uptake
+abline(h = mean(CO2$uptake),
+       col = "darkgreen",
+       lty = 2,
+       lwd = 2)
+
+# Elemen grafik 3: teks keterangan
+text(700, 45,
+     "Merah = Regresi\nHijau = Rata-rata",
+     cex = 0.8)
+```
+
+2.  Buat satu tampilan grafik berukuran **2 × 2** yang terdiri atas empat jenis visualisasi berbeda untuk mengeksplorasi `conc`, `uptake`, `Type`, dan `Treatment`; tentukan sendiri jenis grafik yang paling sesuai dan berikan judul yang jelas pada setiap grafik.
+
+    ```{r}
+    # Membuat layout 2 x 2
+    par(mfrow = c(2, 2))
+
+    # 1. Histogram konsentrasi CO2
+    hist(CO2$conc,
+         main = "Distribusi Konsentrasi CO2",
+         xlab = "Konsentrasi CO2 (conc)",
+         ylab = "Frekuensi",
+         col = "blue",
+         border = "white")
+
+    # 2. Histogram tingkat penyerapan CO2
+    hist(CO2$uptake,
+         main = "Distribusi Penyerapan CO2",
+         xlab = "Tingkat Penyerapan (uptake)",
+         ylab = "Frekuensi",
+         col = "red",
+         border = "white")
+
+    # 3. Boxplot uptake berdasarkan Type
+    boxplot(uptake ~ Type,
+            data = CO2,
+            main = "Penyerapan CO2 Berdasarkan Type",
+            xlab = "Jenis Tanaman (Type)",
+            ylab = "Tingkat Penyerapan (uptake)",
+            col = c("orange", "pink"))
+
+    # 4. Boxplot uptake berdasarkan Treatment
+    boxplot(uptake ~ Treatment,
+            data = CO2,
+            main = "Penyerapan CO2 Berdasarkan Treatment",
+            xlab = "Perlakuan (Treatment)",
+            ylab = "Tingkat Penyerapan (uptake)",
+            col = c("lightblue", "lightcoral"))
+
+    # Mengembalikan layout grafik
+    par(mfrow = c(1, 1))
+    ```
+
+3.  Gunakan `qplot()` untuk membuat visualisasi cepat hubungan `conc` dan `uptake` berdasarkan `Treatment`, kemudian buat kembali visualisasi tersebut menggunakan `ggplot2` dengan memetakan `Treatment` dan `Type` ke **atribut visual yang berbeda** di dalam `aes()` serta menggunakan `geom_*` yang sesuai.
+
+    ```{r}
+    # Memanggil dataset CO2
+    data(CO2)
+
+    # Membuat scatter plot dengan qplot()
+    library(ggplot2)
+
+    qplot(conc, uptake,
+          data = CO2,
+          color = Treatment,
+          geom = "point",
+          main = "Hubungan Konsentrasi CO2 dan Uptake",
+          xlab = "Konsentrasi CO2",
+          ylab = "CO2 Uptake")
+    ```
+
+```{r}
+ggplot(CO2, aes(x = conc, y = uptake,
+                color = Treatment,
+                shape = Type)) +
+  geom_point(size = 3) +
+  labs(
+    title = "Hubungan Konsentrasi CO2 dan Uptake",
+    x = "Konsentrasi CO2",
+    y = "CO2 Uptake",
+    color = "Treatment",
+    shape = "Type"
+  ) +
+  theme_minimal()
+```
+
+4.  Kembangkan grafik `ggplot2` tersebut dengan menambahkan minimal satu `stat_*`, satu `scale_*`, serta salah satu `coord_*`, kemudian lengkapi grafik menggunakan `labs()` dan `theme()` atau salah satu tema siap pakai agar grafik lebih informatif dan mudah dibaca.
+
+    ```{r}
+    library(ggplot2)
+
+    data(CO2)
+
+    ggplot(CO2, aes(x = conc, y = uptake,
+                    color = Treatment,
+                    shape = Type)) +
+      
+      # Titik data
+      geom_point(size = 3) +
+      
+      # Garis regresi berdasarkan Treatment dan Type
+      stat_smooth(
+        aes(group = interaction(Treatment, Type)),
+        method = "lm",
+        se = FALSE
+      ) +
+      
+      # Mengatur warna Treatment
+      scale_color_manual(
+        values = c(
+          "nonchilled" = "blue",
+          "chilled" = "red"
+        )
+      ) +
+      
+      # Mengatur bentuk berdasarkan Type
+      scale_shape_manual(
+        values = c(
+          "Quebec" = 16,
+          "Mississippi" = 17
+        )
+      ) +
+      
+      # Mengatur koordinat
+      coord_cartesian(
+        xlim = c(0, 1000),
+        ylim = c(0, 50)
+      ) +
+      
+      # Label
+      labs(
+        title = "Hubungan Konsentrasi CO2 dengan CO2 Uptake",
+        subtitle = "Berdasarkan Treatment dan Type Tanaman",
+        x = "Konsentrasi CO2 (conc)",
+        y = "CO2 Uptake",
+        color = "Treatment",
+        shape = "Type"
+      ) +
+      
+      # Tema
+      theme_minimal() +
+      theme(
+        plot.title = element_text(face = "bold", size = 14),
+        plot.subtitle = element_text(size = 11),
+        axis.title = element_text(face = "bold"),
+        legend.position = "right"
+      )
+    ```
+
+5.  Simpan grafik akhir menggunakan `ggsave()` dalam format PNG dengan nama **`co2_uptake_visualisasi.png`**, kemudian tuliskan interpretasi mengenai hubungan antara konsentrasi CO₂ dan `uptake` serta perbedaan pola yang terlihat berdasarkan `Type` dan `Treatment`.
+
+    ```{r}
+    p <- ggplot(CO2, aes(x = conc, y = uptake,
+                         color = Treatment,
+                         shape = Type)) +
+      geom_point(size = 3) +
+      stat_smooth(
+        aes(group = interaction(Treatment, Type)),
+        method = "lm",
+        se = FALSE
+      ) +
+      scale_color_manual(
+        values = c(
+          "nonchilled" = "blue",
+          "chilled" = "red"
+        )
+      ) +
+      scale_shape_manual(
+        values = c(
+          "Quebec" = 16,
+          "Mississippi" = 17
+        )
+      ) +
+      coord_cartesian(
+        xlim = c(0, 1000),
+        ylim = c(0, 50)
+      ) +
+      labs(
+        title = "Hubungan Konsentrasi CO2 dengan CO2 Uptake",
+        subtitle = "Berdasarkan Treatment dan Type Tanaman",
+        x = "Konsentrasi CO2 (conc)",
+        y = "CO2 Uptake",
+        color = "Treatment",
+        shape = "Type"
+      ) +
+      theme_minimal() +
+      theme(
+        plot.title = element_text(face = "bold", size = 14),
+        plot.subtitle = element_text(size = 11),
+        axis.title = element_text(face = "bold"),
+        legend.position = "right"
+      )
+
+    # Tampilkan grafik
+    p
+
+    # Simpan grafik
+    ggsave(
+      "co2_uptake_visualisasi.png",
+      plot = p,
+      width = 10,
+      height = 7,
+      dpi = 300
+    )
+    ```
+
+Berdasarkan grafik, terdapat hubungan positif antara konsentrasi CO₂ (`conc`) dan CO₂ uptake (`uptake`). Secara umum, semakin tinggi konsentrasi CO₂, semakin tinggi pula nilai `uptake`, meskipun peningkatannya tidak sepenuhnya linear pada seluruh kelompok tanaman.
+
+Berdasarkan Treatment, tanaman dengan perlakuan nonchilled dan chilled menunjukkan pola respons yang berbeda terhadap peningkatan konsentrasi CO₂. Hal ini terlihat dari posisi titik data dan kemiringan garis regresi yang berbeda.
+
+Berdasarkan Type, yaitu Quebec dan Mississippi, juga terlihat adanya perbedaan pola `uptake`. Perbedaan tersebut menunjukkan bahwa jenis tanaman dapat memengaruhi respons tanaman terhadap konsentrasi CO₂.
+
+Dengan demikian, konsentrasi CO₂ cenderung meningkatkan CO₂ uptake, tetapi pola responsnya berbeda menurut jenis tanaman (`Type`) dan perlakuan suhu (`Treatment`). Garis regresi pada grafik membantu memperlihatkan kecenderungan hubungan tersebut untuk setiap kombinasi `Type` dan `Treatment`.
+
+```{r}
+ggsave(
+  filename = "co2_uptake_visualisasi.png",
+  plot = p,
+  width = 10,
+  height = 7,
+  dpi = 300
+)
+```
