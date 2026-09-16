@@ -1,0 +1,333 @@
+---
+title: "KELOMPOK 4"
+Author:  
+  - "1.Excel Muhammad Hendri-M0501261013"
+  - "2.Nurcahyo Indarto-M0501261083"
+  - "3.Uswatun Hasanah-M0501261021"
+output:
+  html_document:
+    df_print: paged
+    format:
+  html:
+    toc: true
+    toc-title: "Daftar Isi"
+    embed-resources: true
+    theme: cosmo
+execute:
+  warning: false
+  message: false
+editor: visual
+---
+
+```{=html}
+<style>
+.pagedtable {
+  width: 70% !important;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pagedtable table th, 
+.pagedtable table td {
+  padding: 6px 12px !important;
+  white-space: nowrap !important;
+}
+</style>
+```
+
+Excel Muhammad Hendri - M0501261013
+
+Indarto Nurcahyo - M0501261083
+
+Uswatun Hasanah - M0501261021
+
+# **SOAL 1**
+
+> Buat data frame bernama nilai_raw secara manual di R berdasarkan Tabel 1.
+
+```{r}
+nilai_raw <- data.frame(Nama = c("Andi", "Budi", "Citra", "Dewi", "Andi"),
+                        Matematika = c(80, 90, NA, 75, 80),
+                        Statistika = c(85, 88, 78,"-", 85),
+                        Umur = c(21, 20, 22, 21, 21),
+                        stringsAsFactors = FALSE)
+nilai_raw
+```
+
+> Identifikasi nilai yang hilang pada dataset secara sistematis. Ubah tanda hubung ("-") pada nilai Statistika milik Dewi menjadi nilai hilang standar R, yaitu NA.
+
+```{r}
+nilai_raw$Statistika[nilai_raw$Statistika == "-"] <- NA
+nilai_raw$Statistika <- as.numeric(nilai_raw$Statistika)
+```
+
+> Lakukan imputasi terhadap nilai Statistika yang kosong menggunakan rata-rata nilai Statistika mahasiswa lainnya yang tersedia.
+
+```{r}
+ratarata_stat <- mean(nilai_raw$Statistika, na.rm = TRUE)
+nilai_raw$Statistika[is.na(nilai_raw$Statistika)] <- ratarata_stat
+nilai_raw
+```
+
+> Buat kolom baru bernama Status_Umur menggunakan fungsi ifelse() dengan ketentuan: Dewasa jika umur ≥ 21 tahun; Muda jika umur \< 21 tahun.
+
+```{r}
+nilai_raw$Status_Umur <- ifelse(nilai_raw$Umur >= 21, "Dewasa", "Muda")
+nilai_raw
+```
+
+> Identifikasi baris pengamatan yang duplikat.
+
+```{r}
+any(duplicated(nilai_raw))
+```
+
+> Menghapus baris pengamatan yang terdapat duplikat.
+
+```{r}
+nilai_raw <- unique(nilai_raw)
+nilai_raw
+```
+
+> Simpan dataset yang telah dibersihkan ke dalam file bernama nilai_bersih.csv.
+
+```{r}
+write.csv(nilai_raw, file = "nilai_bersih.csv", row.names = FALSE)
+getwd()
+```
+
+# **SOAL 2**
+
+> Buat data frame bernama profil secara manual di R berdasarkan Tabel 2.
+
+```{r}
+profil = data.frame(No = 1:10,
+                    Gender = c("f","f","f","m","m","f","m","m","f","m"),
+                    v1= c(8,15,8,14,8,10,9,9,10,12),
+                    v2= c(9,8,13,9,2,6,9,10,13,10),
+                    v3= c(5,9,12,8,9,10,7,8,6,9),
+                    v4= c(9,5,6,"NA",16,9,13,10,7,8),
+                    v5= c(9,10,7,11,8,10,9,5,10,17),
+                    v6= c(9,8,9,10,10,10,12,10,12,7),
+                    v7= c(5,10,14,6,8,9,10,6,13,9),
+                    v8= c(9,12,12,11,9,7,9,12,9,10),
+                    v9= c(11,9,12,11,8,7,11,6,6,7),
+                    v10= c(8,15,9,8,9,11,7,8,9,7),
+                    stringsAsFactors = FALSE)
+profil
+```
+
+> Lakukan penyaringan (subsetting) sehingga hanya menyisakan pengamatan yang memenuhi salah satu kondisi berikut: gender laki-laki (m) dan v1 \> 9 ; atau gender perempuan (f) dan v3 \<= 10
+
+```{r}
+myprofil <- ((profil$Gender == "m" & profil$v1>9)|(profil$Gender == "f" & profil$v3 <= 10))
+profil_filter <- profil[myprofil,]
+profil_filter
+```
+
+> Urutkan data hasil penyaringan secara multikriteria, dengan ketentuan: gender diurutkan secara descending; untuk pengamatan dengan gender yang sama, v5 diurutkan secara ascending.
+
+```{r}
+library(dplyr)
+profil_filter <- profil %>% arrange(desc(profil$Gender), profil$v5)
+
+profil_filter
+```
+
+> Menyimpan file data dengan nama profil_filter dalam bentuk format csv
+
+```{r}
+write.csv(profil_filter, file = "profil_filter.csv", row.names = FALSE)
+getwd()
+```
+
+# **SOAL 3**
+
+> Gabungkan df_sales dan df_info menggunakan fungsi merge() dengan metode Full Outer Join, sehingga seluruh toko dari kedua data frame tetap disertakan. Perhatikan bahwa nama variabel kunci pada kedua data frame berbeda, yaitu id_toko pada df_sales dan id pada df_info. Gunakan argumen penggabungan yang sesuai.
+
+```{r}
+df_sales <- data.frame(
+  id_toko = c("T1", "T2", "T3"),
+  Minggu1 = c(120, 150, 95),
+  Minggu2 = c(135, 140, 110)
+)
+
+df_info <- data.frame(
+  id = c("T1", "T2", "T4"),
+  Kota = c("Jakarta", "Bandung", "Surabaya")
+)
+
+df_merged <- merge(
+  df_sales, 
+  df_info, 
+  by.x = "id_toko", 
+  by.y = "id", 
+  all = TRUE
+)
+df_merged
+```
+
+> Ubah struktur data hasil penggabungan dari format Wide menjadi Long, sehingga: Minggu1 dan Minggu2 digabung menjadi satu kolom bernama Waktu; nilai penjualan disimpan dalam satu kolom bernama Penjualan.
+
+```{r}
+# 1. Transformasi menggunakan reshape
+df_long <- reshape(
+  df_merged,
+  varying = c("Minggu1", "Minggu2"),
+  v.names = "Penjualan",
+  timevar = "Waktu",
+  times = c("Minggu1", "Minggu2"),
+  direction = "long"
+)
+df_long <- df_long[, c("id", "id_toko", "Kota", "Waktu", "Penjualan")]
+rownames(df_long) <- NULL
+df_long
+```
+
+> Menyimpan file data dengan nama profil_filter dalam bentuk format csv
+
+```{r}
+write.csv(df_long, file = "penjualan_long.csv", row.names = FALSE)
+getwd()
+```
+
+# **SOAL 4**
+
+> Kenali struktur dataset CO2 dan identifikasi peran peubah Plant, Type, Treatment, conc, dan uptake, kemudian buat grafik menggunakan base R untuk menunjukkan hubungan conc dan uptake dengan mengatur bentuk dan ukuran titik, warna, judul, label sumbu, serta rentang sumbu, lalu tambahkan minimal dua elemen grafik menggunakan points(), lines(), abline(), atau text().
+
+```{r}
+CO2
+str(CO2)
+summary(CO2)
+```
+
+> Melihat hubungan conc dengan uptake
+
+```{r}
+plot(
+  CO2$conc, CO2$uptake,
+  pch = 19,
+  cex = 1.2,
+  col = ifelse(CO2$Treatment == "chilled", "blue", "red"),
+  main = "Hubungan Konsentrasi dan Penyerapan CO2",
+  xlab = "Konsentrasi CO2 (conc)",
+  ylab = "Penyerapan CO2 (uptake)",
+  xlim = c(0, 1000),
+  ylim = c(0, 50)
+)
+abline(h = mean(CO2$uptake), col = "darkgreen", lty = 2, lwd = 2)
+text(x = 800, y = mean(CO2$uptake) + 2, labels = "Rata-rata Uptake", col = "darkgreen", cex = 0.9)
+legend("bottomright", legend = c("Nonchilled", "Chilled"), col = c("red", "blue"), pch = 19)
+```
+
+| **Interpretasi**
+| Berdasarkan *scatter plot* memperlihatkan bahwa hubungan antara konsentrasi $\text{CO}_2$ (*conc*) dan laju penyerapan (*Uptake*). Terlihat bahwa kadar $\text{CO}_2$ di udara memengaruhi seberapa banyak $\text{CO}_2$ yang bisa diserap oleh tanaman, sekaligus melihat beda hasilnya antara tanaman yang berada di suhu normal (*Nonchilled*) dan tanaman yang didinginkan (*Chilled*). Makin tinggi kadar $\text{CO}_2$ yang diberikan, makin banyak pula yang diserap oleh tanaman. Namun, penyerapan ini hanya melonjak tajam di awal (pada kadar $100$ sampai $350$). Begitu kadar $\text{CO}_2$ makin tinggi (di atas $500$), kemampuan tanaman untuk menyerapnya mulai kenyang atau melambat sehingga grafiknya cenderung mendatar. Suhu udara juga sangat menentukan. Tanaman yang berada di suhu normal (titik merah) jauh lebih efektif dan cepat menyerap $\text{CO}_2$ dibandingkan tanaman yang didinginkan (titik biru). Garis putus-putus hijau di tengah menunjukkan batas rata-rata penyerapan. Terlihat jelas bahwa sebagian besar tanaman bersuhu normal berada di atas garis rata-rata tersebut, sedangkan tanaman yang didinginkan berada di bawahnya karena proses penyerapan terganggu oleh suhu dingin.
+
+> Buat satu tampilan grafik berukuran 2 × 2 yang terdiri atas empat jenis visualisasi berbeda untuk mengeksplorasi conc, uptake, Type, dan Treatment; tentukan sendiri jenis grafik yang paling sesuai dan berikan judul yang jelas pada setiap grafik.
+
+```{r}
+par(mfrow = c(2, 2))
+
+# Grafik 1: Scatter Plot conc vs uptake
+plot(CO2$conc, CO2$uptake, main = "Scatter Plot: conc vs uptake",
+     xlab = "Konsentrasi CO2", ylab = "Uptake", col = "darkblue", pch = 16)
+
+# Grafik 2: Boxplot uptake berdasarkan Type
+boxplot(uptake ~ Type, data = CO2, main = "Boxplot: uptake berdasarkan Type",
+        xlab = "Tipe Tanaman", ylab = "Uptake", col = c("orange", "lightgreen"))
+
+# Grafik 3: Boxplot uptake berdasarkan Treatment
+boxplot(uptake ~ Treatment, data = CO2, main = "Boxplot: uptake berdasarkan Treatment",
+        xlab = "Perlakuan Suhu", ylab = "Uptake", col = c("lightblue", "pink"))
+
+# Grafik 4: Histogram Distribusi uptake
+hist(CO2$uptake, main = "Histogram: Distribusi Uptake",
+     xlab = "Uptake", col = "purple", border = "white")
+
+```
+
+> Gunakan qplot() untuk membuat visualisasi cepat hubungan conc dan uptake berdasarkan Treatment, kemudian buat kembali visualisasi tersebut menggunakan ggplot2 dengan memetakan Treatment dan Type ke atribut visual yang berbeda di dalam aes() serta menggunakan geom\_\* yang sesuai.
+
+```{r}
+library(ggplot2)
+qplot(x = conc, y = uptake, data = CO2, color = Treatment,
+      geom = c("point", "smooth"),
+      main = "Visualisasi Cepat dengan qplot()")
+
+# Visualisasi Ulang dengan ggplot2 (Pemetaan Treatment dan Type)
+p_base <- ggplot(CO2, aes(x = conc, y = uptake, color = Treatment, shape = Type)) +
+  geom_point(size = 3, alpha = 0.8) +
+  geom_smooth(method = "loess", se = FALSE)
+p_base
+```
+
+> **Interpretasi**
+>
+> Berdasarkan grafi di atas, terlihat peningkatan pada tingkat penyerapan (*Uptake*) atau dengan kata lain terdapat penyerapan $\text{CO}_2$ meningkat pesat. Namun, pada tingkat konsentrasi mengalami stagnan pada kisaran 300 hingga 1000. Sehingga dapat disimpulkan bahwa meskipun pasokan $\text{CO}_2$ terus bertambah hingga 1000 tingakt penyerapan (*Uptake*) stagnan atau teteap berada di level yang sama karena kapasitas penyerapan tanaman telah mencapai titik jenuh.
+
+> Kembangkan grafik ggplot2 tersebut dengan menambahkan minimal satu stat\_*, satu scale\_*, serta salah satu coord\_\*, kemudian lengkapi grafik menggunakan labs() dan theme() atau salah satu tema siap pakai agar grafik lebih informatif dan mudah dibaca.
+
+```{r}
+library(ggplot2)
+
+# Visualisasi Cepat dengan qplot()
+qplot(x = conc, y = uptake, data = CO2, color = Treatment,
+      geom = c("point", "smooth"),
+      main = "Visualisasi Cepat dengan qplot()")
+
+p_base <- ggplot(CO2, aes(x = conc, y = uptake, color = Treatment, shape = Type)) +
+  geom_point(size = 3, alpha = 0.8) +
+  geom_smooth(method = "loess", se = FALSE)
+p_base
+```
+
+| **Interpretasi**
+| Berdasarkan grafik di atas, menunjukkan bahwa penyerapan $\text{CO}_2$ oleh tanaman melonjak drastis pada kadar awal ($95\text{--}250$), lalu melandai (jenuh) di atas kadar $350$. Tanaman asal **Quebec** jauh lebih efektif menyerap $\text{CO}_2$ dan tahan suhu dingin dibandingkan tanaman asal **Mississippi**. Perlakuan suhu dingin (*Chilled*) terbukti menurunkan kemampuan penyerapan pada semua tanaman, dengan dampak terparah terjadi pada tanaman Mississippi kedinginan yang penyerapannya paling rendah dan tidak merespons peningkatan $\text{CO}_2$.
+
+> Simpan grafik akhir menggunakan ggsave() dalam format PNG dengan nama co2_uptake_visualisasi.png, kemudian tuliskan interpretasi mengenai hubungan antara konsentrasi CO₂ dan uptake serta perbedaan pola yang terlihat berdasarkan Type dan Treatment.
+
+```{r}
+# Pengembangan grafik lengkap
+p_final <- ggplot(CO2, aes(x = conc, y = uptake, color = Treatment, shape = Type)) +
+  geom_point(size = 2.5, alpha = 0.7) +
+  stat_smooth(method = "loess", se = TRUE, size = 1) +
+  scale_color_manual(values = c("nonchilled" = "#D95F02", "chilled" = "#7570B3")) +
+  scale_shape_manual(values = c("Quebec" = 16, "Mississippi" = 17)) +
+  scale_x_continuous(breaks = seq(0, 1000, by = 200)) +
+  coord_cartesian(xlim = c(80, 1000), ylim = c(5, 50)) +
+  labs(
+    title = "Eksplorasi Penyerapan CO2 Pada Tanaman Gras",
+    subtitle = "Dampak Konsentrasi CO2, Asal Tipe Tanaman, dan Perlakuan Suhu",
+    x = expression(paste("Konsentrasi ", CO[2], " (", mu, "L/L)")),
+    y = expression(paste("Tingkat Penyerapan/Uptake (", mu, "mol/", m^2, " sec)")),
+    color = "Perlakuan",
+    shape = "Asal Tipe",
+    caption = "Sumber Data: R Built-in Dataset CO2"
+  ) +
+  
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(hjust = 0.5, color = "gray30"),
+    legend.position = "top",
+    panel.grid.minor = element_blank()
+  )
+print(p_final)
+
+```
+
+> **Interpretasi**
+>
+> Berdasarkan grafik di atas, menunjukkan bahwa kemampuan tanaman dalam menyerap $\text{CO}_2$ dipengaruhi oleh konsentrasi $\text{CO}_2$, daerah asal, dan suhu lingkungan. Penyerapan $\text{CO}_2$ melonjak pesat di awal pada kadar $95\text{--}250\ \mu\text{L/L}$, tetapi mulai stagnan atau mendatar setelah melewati kadar $350\ \mu\text{L/L}$. Tanaman asal **Quebec** (titik bulat) jauh lebih jago menyerap $\text{CO}_2$ dan tahan suhu dingin dibandingkan tanaman **Mississippi** (titik segitiga), sementara paparan suhu dingin (*Chilled*, garis ungu) terbukti menurunkan penyerapan pada kedua jenis tanaman. Sehingga, tanaman Mississippi yang didinginkan menjadi yang paling parah penyerapannya, sedangkan tanaman Quebec sangat tahan dingin karena saat kedinginan pun penyerapannya masih lebih tinggi daripada tanaman Mississippi di suhu normal (*Nonchilled*, garis oranye).
+
+> Menyimpan grafik akhir menggunakan ggsave()
+
+```{r}
+ggsave(
+  filename = "co2_uptake_visualisasi.png",
+  plot = p_final,
+  width = 8,
+  height = 6,
+  dpi = 300
+)
+```
